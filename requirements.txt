@@ -1,0 +1,3 @@
+
+duckduckgo-search
+from duckduckgo-search import DDGS
