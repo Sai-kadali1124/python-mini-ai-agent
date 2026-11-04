@@ -3,12 +3,15 @@ import streamlit as st
 import torch
 from transformers import AutoTokenizer, AutoModelForCausalLM
 from ddgs import DDGS
+
 def search_web(query):
     try:
         with DDGS() as ddgs:
             results = list(ddgs.news(query, max_results=5))
+        return results
 
-        search_context = ""
+    except Exception as e:
+        return []
 
         for result in results:
          search_context += (
@@ -117,6 +120,7 @@ web_search_enabled = st.sidebar.checkbox(
 )
 user_input = st.chat_input("Message Sai AI...")
 
+
 if user_input:
     st.session_state.messages.append(
         {"role": "user", "content": user_input}
@@ -124,59 +128,94 @@ if user_input:
 
     with st.chat_message("user"):
         st.markdown(user_input)
-    model_messages = st.session_state.messages.copy()
 
+    # WEB SEARCH MODE
     if web_search_enabled:
-        search_results = search_web(user_input)
 
-        enhanced_prompt = f"""
-        User question: {user_input}
+        with st.chat_message("assistant"):
+            with st.spinner("Searching the latest news..."):
 
-        Web search results:
-        {search_results}
+                results = search_web(user_input)
 
-        Answer using these search results.
-        Include source URLs in your answer.
-        """
+                if results:
 
-        model_messages[-1] = {
-            "role": "user",
-            "content": enhanced_prompt
-        }
-    with st.chat_message("assistant"):
-        with st.spinner("Sai AI is thinking..."):
+                    st.markdown("### 🌐 Latest News Results")
 
-            inputs = tokenizer.apply_chat_template(
-                model_messages,
-                tokenize=True,
-                add_generation_prompt=True,
-                return_tensors="pt",
-                return_dict=True
-            )
+                    news_text = ""
 
-            with torch.no_grad():
-                outputs = model.generate(
-                    **inputs,
-                    max_new_tokens=180,
-                    do_sample=True,
-                    temperature=0.7,
-                    top_p=0.9,
-                    repetition_penalty=1.1
+                    for i, result in enumerate(results, 1):
+                        title = result.get("title", "No title")
+                        date = result.get("date", "Date unavailable")
+                        source = result.get("source", "Source unavailable")
+                        url = result.get("url", "")
+                        body = result.get("body", "No description available")
+
+                        st.markdown(f"### {i}. {title}")
+                        st.caption(f"📅 {date} | 📰 {source}")
+                        st.write(body)
+
+                        if url:
+                            st.markdown(f"[Read full article]({url})")
+
+                        st.divider()
+
+                        news_text += (
+                            f"{i}. {title}\n"
+                            f"Date: {date}\n"
+                            f"Source: {source}\n"
+                            f"URL: {url}\n"
+                            f"Description: {body}\n\n"
+                        )
+
+                    st.session_state.messages.append(
+                        {
+                            "role": "assistant",
+                            "content": news_text
+                        }
+                    )
+
+                else:
+                    st.warning(
+                        "No news results found. Please try another search."
+                    )
+
+    # NORMAL AI CHAT MODE
+    else:
+
+        with st.chat_message("assistant"):
+            with st.spinner("Sai AI is thinking..."):
+
+                inputs = tokenizer.apply_chat_template(
+                    st.session_state.messages,
+                    tokenize=True,
+                    add_generation_prompt=True,
+                    return_tensors="pt",
+                    return_dict=True
                 )
 
-            input_length = inputs["input_ids"].shape[1]
-            new_tokens = outputs[0][input_length:]
+                with torch.no_grad():
+                    outputs = model.generate(
+                        **inputs,
+                        max_new_tokens=180,
+                        do_sample=True,
+                        temperature=0.7,
+                        top_p=0.9,
+                        repetition_penalty=1.1
+                    )
 
-            response = tokenizer.decode(
-                new_tokens,
-                skip_special_tokens=True
-            ).strip()
+                input_length = inputs["input_ids"].shape[1]
+                new_tokens = outputs[0][input_length:]
 
-            if not response:
-                response = "I couldn't generate a response. Please try again."
+                response = tokenizer.decode(
+                    new_tokens,
+                    skip_special_tokens=True
+                ).strip()
 
-            st.markdown(response)
+                if not response:
+                    response = "I couldn't generate a response."
 
-    st.session_state.messages.append(
-        {"role": "assistant", "content": response}
-    )
+                st.markdown(response)
+
+        st.session_state.messages.append(
+            {"role": "assistant", "content": response}
+        )
