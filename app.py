@@ -145,12 +145,28 @@ user_input = st.chat_input("Message Sai AI...")
 
 
 if user_input:
-    st.session_state.messages.append(
-        {"role": "user", "content": user_input}
-    )
 
+    original_input = user_input
+
+    if pdf_context:
+        user_input = f"""
+        Answer the question using the uploaded PDF content.
+
+        PDF Content:
+        {pdf_context[:4000]}
+
+        Question:
+        {original_input}
+
+        If the answer is not in the PDF, say:
+        "I couldn't find this information in the PDF."
+        """
+
+    st.session_state.messages.append(
+    {"role": "user", "content": original_input}
+)
     with st.chat_message("user"):
-        st.markdown(user_input)
+    st.markdown(original_input)
 
     # WEB SEARCH MODE
     if web_search_enabled:
@@ -206,16 +222,23 @@ if user_input:
     else:
 
         with st.chat_message("assistant"):
-            with st.spinner("Sai AI is thinking..."):
+    with st.spinner("Sai AI is thinking..."):
 
-                inputs = tokenizer.apply_chat_template(
-                    st.session_state.messages,
-                    tokenize=True,
-                    add_generation_prompt=True,
-                    return_tensors="pt",
-                    return_dict=True
-                )
+        model_messages = st.session_state.messages.copy()
 
+        if pdf_context:
+            model_messages[-1] = {
+                "role": "user",
+                "content": user_input
+            }
+
+        inputs = tokenizer.apply_chat_template(
+            model_messages,
+            tokenize=True,
+            add_generation_prompt=True,
+            return_tensors="pt",
+            return_dict=True
+        )
                 with torch.no_grad():
                     outputs = model.generate(
                         **inputs,
