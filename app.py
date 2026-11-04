@@ -11,7 +11,7 @@ def search_web(query):
         search_context = ""
 
         for result in results:
-    search_context += (
+         search_context += (
         f"\nDate: {result.get('date', 'Date not provided')}\n"
         f"Title: {result.get('title', '')}\n"
         f"Source: {result.get('source', '')}\n"
