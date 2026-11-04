@@ -165,7 +165,7 @@ if user_input:
     st.session_state.messages.append(
     {"role": "user", "content": original_input}
 )
-    with st.chat_message("user"):
+with st.chat_message("user"):
     st.markdown(original_input)
 
     # WEB SEARCH MODE
