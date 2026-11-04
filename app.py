@@ -3,6 +3,7 @@ import streamlit as st
 import torch
 from transformers import AutoTokenizer, AutoModelForCausalLM
 from ddgs import DDGS
+from pypdf import PdfReader
 
 def search_web(query):
     try:
@@ -102,6 +103,28 @@ with st.sidebar:
             {"role": "system", "content": SYSTEM_PROMPT}
         ]
         st.rerun()
+
+    st.divider()
+
+    st.subheader("📄 Chat with PDF")
+
+    uploaded_pdf = st.file_uploader(
+        "Upload your PDF",
+        type=["pdf"]
+    )
+
+    pdf_context = ""
+
+    if uploaded_pdf is not None:
+        reader = PdfReader(uploaded_pdf)
+
+        for page in reader.pages:
+            text = page.extract_text()
+
+            if text:
+                pdf_context += text + "\n"
+
+        st.success("PDF uploaded successfully!")
 
     st.caption("Sai AI • Built with Streamlit")
 
