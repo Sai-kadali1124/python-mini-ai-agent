@@ -15,23 +15,19 @@ st.set_page_config(
 # ---------------- WEB SEARCH ----------------
 def search_web(query):
     try:
-        search_context = ""
-
         with DDGS() as ddgs:
-            results = list(ddgs.news(query, max_results=5))
-
-        for result in results:
-            search_context += (
-                f"\nDate: {result.get('date', 'Date not provided')}\n"
-                f"Title: {result.get('title', '')}\n"
-                f"Source: {result.get('source', '')}\n"
-                f"URL: {result.get('url', '')}\n"
-                f"Description: {result.get('body', '')}\n"
+            results = list(
+                ddgs.news(
+                    query,
+                    region="us-en",
+                    max_results=5
+                )
             )
 
         return results
 
     except Exception as e:
+        print("Search error:", e)
         return []
 
 
