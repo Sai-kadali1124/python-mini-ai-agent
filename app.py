@@ -122,12 +122,30 @@ if user_input:
 
     with st.chat_message("user"):
         st.markdown(user_input)
+    model_messages = st.session_state.messages.copy()
 
+    if web_search_enabled:
+        search_results = search_web(user_input)
+
+        enhanced_prompt = f"""
+        User question: {user_input}
+
+        Web search results:
+        {search_results}
+
+        Answer using these search results.
+        Include source URLs in your answer.
+        """
+
+        model_messages[-1] = {
+            "role": "user",
+            "content": enhanced_prompt
+        }
     with st.chat_message("assistant"):
         with st.spinner("Sai AI is thinking..."):
 
             inputs = tokenizer.apply_chat_template(
-                st.session_state.messages,
+                model_messages,
                 tokenize=True,
                 add_generation_prompt=True,
                 return_tensors="pt",
