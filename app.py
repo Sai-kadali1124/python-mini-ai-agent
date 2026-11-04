@@ -221,9 +221,8 @@ with st.chat_message("user"):
     # NORMAL AI CHAT MODE
     else:
 
-        with st.chat_message("assistant"):
+with st.chat_message("assistant"):
     with st.spinner("Sai AI is thinking..."):
-
         model_messages = st.session_state.messages.copy()
 
         if pdf_context:
