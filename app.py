@@ -89,9 +89,7 @@ if user_input:
     with st.chat_message("assistant"):
         st.write(response)
 
-!streamlit run app.py --server.port 8501 &>/content/logs.txt &
 
-!npm install -q localtunnel
 
 # Commented out IPython magic to ensure Python compatibility.
 # %%writefile app.py
@@ -147,9 +145,7 @@ except Exception as e:
     print("ERROR:", e)
     print(open("/content/streamlit.log").read())
 
-!curl -I http://localhost:8501
 
-!npx localtunnel --port 8501
 
 import urllib.request
 
