@@ -2,6 +2,25 @@
 import streamlit as st
 import torch
 from transformers import AutoTokenizer, AutoModelForCausalLM
+from ddgs import DDGS
+def search_web(query):
+    try:
+        with DDGS() as ddgs:
+            results = list(ddgs.text(query, max_results=5))
+
+        search_context = ""
+
+        for result in results:
+            search_context += (
+                f"\nTitle: {result.get('title', '')}\n"
+                f"URL: {result.get('href', '')}\n"
+                f"Description: {result.get('body', '')}\n"
+            )
+
+        return search_context
+
+    except Exception as e:
+        return f"Search error: {e}"
 
 # ---------------- PAGE CONFIG ----------------
 st.set_page_config(
@@ -90,6 +109,10 @@ for message in st.session_state.messages:
         st.markdown(message["content"])
 
 # ---------------- USER INPUT ----------------
+web_search_enabled = st.sidebar.checkbox(
+    "🌐 Enable Web Search",
+    value=False
+)
 user_input = st.chat_input("Message Sai AI...")
 
 if user_input:
