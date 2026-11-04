@@ -5,35 +5,35 @@ from transformers import AutoTokenizer, AutoModelForCausalLM
 from ddgs import DDGS
 from pypdf import PdfReader
 
-def search_web(query):
-    try:
-        with DDGS() as ddgs:
-            results = list(ddgs.news(query, max_results=5))
-        return results
-
-    except Exception as e:
-        return []
-
-        for result in results:
-         search_context += (
-        f"\nDate: {result.get('date', 'Date not provided')}\n"
-        f"Title: {result.get('title', '')}\n"
-        f"Source: {result.get('source', '')}\n"
-        f"URL: {result.get('url', '')}\n"
-        f"Description: {result.get('body', '')}\n"
-    )
-
-        return search_context
-
-    except Exception as e:
-        return f"Search error: {e}"
-
 # ---------------- PAGE CONFIG ----------------
 st.set_page_config(
     page_title="Sai AI Chatbot",
     page_icon="🤖",
     layout="centered"
 )
+
+# ---------------- WEB SEARCH ----------------
+def search_web(query):
+    try:
+        search_context = ""
+
+        with DDGS() as ddgs:
+            results = list(ddgs.news(query, max_results=5))
+
+        for result in results:
+            search_context += (
+                f"\nDate: {result.get('date', 'Date not provided')}\n"
+                f"Title: {result.get('title', '')}\n"
+                f"Source: {result.get('source', '')}\n"
+                f"URL: {result.get('url', '')}\n"
+                f"Description: {result.get('body', '')}\n"
+            )
+
+        return results
+
+    except Exception as e:
+        return []
+
 
 # ---------------- CUSTOM UI ----------------
 st.markdown("""
@@ -58,7 +58,11 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-st.markdown('<div class="main-title">🤖 Sai AI</div>', unsafe_allow_html=True)
+st.markdown(
+    '<div class="main-title">🤖 Sai AI</div>',
+    unsafe_allow_html=True
+)
+
 st.markdown(
     '<div class="subtitle">Your personal AI assistant</div>',
     unsafe_allow_html=True
@@ -74,6 +78,7 @@ def load_model():
 
     model.eval()
     return tokenizer, model
+
 
 with st.spinner("Loading AI model..."):
     tokenizer, model = load_model()
@@ -95,7 +100,6 @@ if "messages" not in st.session_state:
 # ---------------- SIDEBAR ----------------
 with st.sidebar:
     st.title("⚙️ Settings")
-
     st.write("Model: SmolLM2-135M-Instruct")
 
     if st.button("🗑️ Clear Chat", use_container_width=True):
@@ -105,7 +109,6 @@ with st.sidebar:
         st.rerun()
 
     st.divider()
-
     st.subheader("📄 Chat with PDF")
 
     uploaded_pdf = st.file_uploader(
@@ -141,34 +144,38 @@ web_search_enabled = st.sidebar.checkbox(
     "🌐 Enable Web Search",
     value=False
 )
-user_input = st.chat_input("Message Sai AI...")
 
+user_input = st.chat_input("Message Sai AI...")
 
 if user_input:
 
     original_input = user_input
 
+    # PDF MODE
     if pdf_context:
         user_input = f"""
-        Answer the question using the uploaded PDF content.
+Answer the question using the uploaded PDF content.
 
-        PDF Content:
-        {pdf_context[:4000]}
+PDF Content:
+{pdf_context[:4000]}
 
-        Question:
-        {original_input}
+Question:
+{original_input}
 
-        If the answer is not in the PDF, say:
-        "I couldn't find this information in the PDF."
-        """
+If the answer is not in the PDF, say:
+"I couldn't find this information in the PDF."
+"""
 
+    # Save user message
     st.session_state.messages.append(
-    {"role": "user", "content": original_input}
-)
-with st.chat_message("user"):
-    st.markdown(original_input)
+        {"role": "user", "content": original_input}
+    )
 
-    # WEB SEARCH MODE
+    # Display user message
+    with st.chat_message("user"):
+        st.markdown(original_input)
+
+    # ---------------- WEB SEARCH MODE ----------------
     if web_search_enabled:
 
         with st.chat_message("assistant"):
@@ -218,26 +225,29 @@ with st.chat_message("user"):
                         "No news results found. Please try another search."
                     )
 
-    # NORMAL AI CHAT MODE
+    # ---------------- NORMAL AI CHAT MODE ----------------
     else:
 
-with st.chat_message("assistant"):
-    with st.spinner("Sai AI is thinking..."):
-        model_messages = st.session_state.messages.copy()
+        with st.chat_message("assistant"):
+            with st.spinner("Sai AI is thinking..."):
 
-        if pdf_context:
-            model_messages[-1] = {
-                "role": "user",
-                "content": user_input
-            }
+                model_messages = st.session_state.messages.copy()
 
-        inputs = tokenizer.apply_chat_template(
-            model_messages,
-            tokenize=True,
-            add_generation_prompt=True,
-            return_tensors="pt",
-            return_dict=True
-        )
+                # PDF context for model
+                if pdf_context:
+                    model_messages[-1] = {
+                        "role": "user",
+                        "content": user_input
+                    }
+
+                inputs = tokenizer.apply_chat_template(
+                    model_messages,
+                    tokenize=True,
+                    add_generation_prompt=True,
+                    return_tensors="pt",
+                    return_dict=True
+                )
+
                 with torch.no_grad():
                     outputs = model.generate(
                         **inputs,
@@ -261,6 +271,7 @@ with st.chat_message("assistant"):
 
                 st.markdown(response)
 
+        # Save assistant response
         st.session_state.messages.append(
             {"role": "assistant", "content": response}
         )
