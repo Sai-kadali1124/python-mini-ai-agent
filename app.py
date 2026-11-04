@@ -136,10 +136,12 @@ for message in st.session_state.messages:
         st.markdown(message["content"])
 
 # ---------------- USER INPUT ----------------
-web_search_enabled = st.sidebar.checkbox(
-    "🌐 Enable Web Search",
-    value=False
+mode = st.sidebar.radio(
+    "Choose Mode",
+    ["🤖 AI Chat", "🌐 AI News Search", "📄 Chat with PDF"]
 )
+
+web_search_enabled = mode == "🌐 AI News Search"
 
 user_input = st.chat_input("Message Sai AI...")
 
@@ -148,7 +150,7 @@ if user_input:
     original_input = user_input
 
     # PDF MODE
-    if pdf_context:
+    if pdf_context and mode == "📄 Chat with PDF":
         user_input = f"""
 Answer the question using the uploaded PDF content.
 
