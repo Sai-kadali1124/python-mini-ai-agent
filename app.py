@@ -6,16 +6,18 @@ from ddgs import DDGS
 def search_web(query):
     try:
         with DDGS() as ddgs:
-            results = list(ddgs.text(query, max_results=5))
+            results = list(ddgs.news(query, max_results=5))
 
         search_context = ""
 
         for result in results:
-            search_context += (
-                f"\nTitle: {result.get('title', '')}\n"
-                f"URL: {result.get('href', '')}\n"
-                f"Description: {result.get('body', '')}\n"
-            )
+    search_context += (
+        f"\nDate: {result.get('date', 'Date not provided')}\n"
+        f"Title: {result.get('title', '')}\n"
+        f"Source: {result.get('source', '')}\n"
+        f"URL: {result.get('url', '')}\n"
+        f"Description: {result.get('body', '')}\n"
+    )
 
         return search_context
 
